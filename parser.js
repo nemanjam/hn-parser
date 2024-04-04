@@ -123,6 +123,7 @@ function getNewAndOldCompanies(companies1, companies2) {
             const isEqual = compareCompanies(company1, company2);
             if (isEqual) {
                 isNew = false;
+                break;
             }           
         }
         if (isNew) {
@@ -164,6 +165,6 @@ async function main(month1, month2) {
     return output;
 }
 
-await main('March', 'April');
+await main('December', 'January');
 
 
