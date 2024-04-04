@@ -64,8 +64,8 @@ async function getCompanies(threadUrl) {
     const titleChildSelector = '.commtext:first-child';
     const linkChildSelector = 'span.age a';
 
-    // remove url after name
     const companyNameRegex = /^([^|]+)\|/;
+    const removeLinkRegex = /^(.*?)\s+\(.*\)$/;
 
     const doc = await getDocumentFromUrl(threadUrl);
     const postsNodes = doc.querySelectorAll(postsSelector)
@@ -78,8 +78,11 @@ async function getCompanies(threadUrl) {
 
         const titleText = titleNode.textContent.trim(); 
         const match = titleText.match(companyNameRegex); 
-        const name = match ? match[1].trim() : null;
+        let name = match ? match[1].trim() : null;
         if (!name) continue;
+
+        const urlMatch = name.match(removeLinkRegex);
+        name = urlMatch ? urlMatch[1].trim() : name;
 
         const linkNode = postNode.querySelector(linkChildSelector);
         const link = linkNode.href;
