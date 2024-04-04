@@ -11,8 +11,6 @@ async function getThreads() {
     const threadsUrl = 'https://news.ycombinator.com/submitted?id=whoishiring';
     const threadsSelector = 'tr.athing span.titleline a';
     const monthRegex = /.*(?:hiring).*?\((\w+)/;
-    const baseUrl = 'https://news.ycombinator.com/';
-
 
     const doc = await getDocumentFromUrl(threadsUrl);
     const threadsNodes = doc.querySelectorAll(threadsSelector)
@@ -25,7 +23,7 @@ async function getThreads() {
         const month = match ? match[1].trim() : null;
         if (!month) continue;
 
-        const link = baseUrl + threadNode.href;
+        const link = threadNode.href;
 
         const thread = { month, link };
         threads.push(thread)
@@ -34,13 +32,19 @@ async function getThreads() {
     return threads;
 }
 
-// await getThreads();
+async function getThreadUrlFromMonth(month) {
+    const threads = await getThreads();
+
+    const thread = threads.find(thread => thread.month === month);
+    const link = thread.link;
+
+    return link;
+}
 
 async function getPagesUrlsForMonth(threadUrl) {
     const postsSelector = '.athing.comtr:has([indent="0"]) .commtext:first-child';
 
     const pagesUrls = []
-
 
     for (let page = 1; page < 10; page++) {
         const pageUrl = `${threadUrl}&p=${page}`;
@@ -55,11 +59,12 @@ async function getPagesUrlsForMonth(threadUrl) {
     return pagesUrls;
 }
 
-let threadUrl = 'https://news.ycombinator.com/item?id=39894820';
-await getPagesUrlsForMonth(threadUrl);
-
 async function getCompanies(threadUrl) {
-    const postsSelector = '.athing.comtr:has([indent="0"]) .commtext:first-child';
+    const postsSelector = '.athing.comtr:has([indent="0"])';
+    const titleChildSelector = '.commtext:first-child';
+    const linkChildSelector = 'span.age a';
+
+    // remove url after name
     const companyNameRegex = /^([^|]+)\|/;
 
     const doc = await getDocumentFromUrl(threadUrl);
@@ -68,55 +73,94 @@ async function getCompanies(threadUrl) {
     const companies = []
 
     for (const postNode of postsNodes) {
-        const postText = postNode.textContent.trim(); 
-        const match = postText.match(companyNameRegex); 
-        const company = match ? match[1].trim() : null;
-        if (!company) continue;
+        const titleNode = postNode.querySelector(titleChildSelector);
+        if (!titleNode) continue;
 
-        companies.push(company)
+        const titleText = titleNode.textContent.trim(); 
+        const match = titleText.match(companyNameRegex); 
+        const name = match ? match[1].trim() : null;
+        if (!name) continue;
+
+        const linkNode = postNode.querySelector(linkChildSelector);
+        const link = linkNode.href;
+
+        const company = { name, link };
+        companies.push(company);
     }
 
     return companies
 }
 
-let threadUrl = 'https://news.ycombinator.com/item?id=39894820';
-await getCompanies(threadUrl)
-
 async function getCompaniesForMonth(threadUrl) {
-    const pagesUrls = getPagesUrlsForMonth(threadUrl);
+    const pagesUrls = await getPagesUrlsForMonth(threadUrl);
 
     const allCompanies = []
 
     for (const pageUrl of pagesUrls) {
         const companies = await getCompanies(pageUrl);
-        allCompanies.push(companies);
+        allCompanies.push(...companies);
     }
 
     return allCompanies;
 }
 
-async function getNewAndOldCompanies(companies1, companies2) {
+function compareCompanies(company1, company2) {
+    const isEqual = company1.name === company2.name;
+    return isEqual;
+}
+
+function getNewAndOldCompanies(companies1, companies2) {
 
     const newCompanies = [];
     const oldCompanies = [];
 
-    for (const company1 of companies1) {
+    for (const company2 of companies2) {
         let isNew = true;
-        for (const company2 of companies2) {
-            if ( company1 === company2) {
+        for (const company1 of companies1) {
+            const isEqual = compareCompanies(company1, company2);
+            if (isEqual) {
                 isNew = false;
-            }
-            
+            }           
         }
         if (isNew) {
-            newCompanies.push(company1);
+            newCompanies.push(company2);
         } else {
-            oldCompanies.push(company1);
+            oldCompanies.push(company2);
         }
     }
 
     const result = { newCompanies, oldCompanies };
     return result;
 }
+
+function printResult(result) {
+    const { newCompanies, oldCompanies } = result;
+
+    const output = { 
+        newCompanies,
+        newCount: newCompanies.length,
+        newNames: newCompanies.map(company => company.name),
+        oldCompanies,
+        oldCount: oldCompanies.length,
+        oldNames: oldCompanies.map(company => company.name),
+    };
+
+    return output;
+}
+
+async function main(month1, month2) {
+    const threadUrl1 = await getThreadUrlFromMonth(month1);
+    const threadUrl2 = await getThreadUrlFromMonth(month2);
+
+    const companies1 = await getCompaniesForMonth(threadUrl1);
+    const companies2 = await getCompaniesForMonth(threadUrl2);
+
+    const result = getNewAndOldCompanies(companies1, companies2);
+    const output = printResult(result);
+
+    return output;
+}
+
+await main('March', 'April');
 
 
