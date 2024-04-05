@@ -1,11 +1,16 @@
 
 async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
-    const cache = { threads: null };
+    const cache = { threads: null, url: [] };
 
     async function getDocumentFromUrl(url) {
-        const response = await fetch(url);
-        const htmlContent = await response.text();
+        if (!cache.url?.[url]) {
+            const response = await fetch(url);
+            cache.url[url] = await response.text();
+            await sleep(1);
+        }
+
+        const htmlContent = cache.url[url];
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
@@ -62,8 +67,6 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
             const pageUrl = `${threadUrl}&p=${page}`;
             try {
                 const doc = await getDocumentFromUrl(pageUrl); 
-                await sleep(1);
-
                 const postsNodes = doc.querySelectorAll(postsSelector);
                 if (!(postsNodes.length > 0)) break;
                 
@@ -236,7 +239,6 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
         console.log(allMonths);
         console.table(allResults);
-        
     }
 
     async function compareLastTwoMonths() {
@@ -254,6 +256,52 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
         console.table(output);
     }
 
+    async function getNumberOfMonthsForLastMonthsCompanies() {
+        const parsedMonths = await getAllMonths();
+        const { allMonths } = parsedMonths;
+
+        const month1 = allMonths[0];
+        const threadUrl1 = await getThreadUrlFromMonth(month1);
+        const companies1 = await getCompaniesForMonth(threadUrl1);
+
+        const allCompanies = [];
+        for (const company1 of companies1) {
+            const company = { ...company1, months: [], monthsCount: 0, ads: [] };
+            for (const month of allMonths) {
+                const threadUrl2 = await getThreadUrlFromMonth(month);
+                const companies2 = await getCompaniesForMonth(threadUrl2);
+
+                let isFound = false;
+                let companyAd = null;
+                for (const company2 of companies2) {
+
+                    const isEqual = compareCompanies(company1, company2);
+                    if (isEqual) {
+                        isFound = true;
+                        companyAd = { ...company2, month }
+                        break;
+                    }     
+                }
+                if (isFound) {
+                    company.months.push(month);
+                    company.ads.push(companyAd);
+                    company.monthsCount++;
+                }
+            }
+            allCompanies.push(company);
+            console.log('company', company);
+        }
+
+        allCompanies.sort((a, b) => b.monthsCount - a.monthsCount);
+
+        if (saveAsFile) {
+            const output = { allCompanies };
+            downloadAsJsonFile(output, 'output-all-companies.json');
+        }
+
+        console.table(allCompanies);
+    }
+
     async function main() {
         switch (whichMonths) {
             case 'last-two':
@@ -261,6 +309,9 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
                 break;
             case 'all':
                 await compareAllMonths();        
+                break;
+            case 'companies':
+                await getNumberOfMonthsForLastMonthsCompanies();        
                 break;
         
             default:
@@ -274,9 +325,9 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 (function() {
     const options = {
         saveAsFile: true,
-        whichMonths: 'all',
+        whichMonths: 'companies',
     }
-    
+
     parse(options);
 })();
 
