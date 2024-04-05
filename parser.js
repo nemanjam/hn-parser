@@ -1,5 +1,5 @@
 
-(async function({ shouldStringify = false }) {
+async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
     const cache = { threads: null };
 
@@ -180,6 +180,19 @@
         return output;
     }
 
+      function downloadAsJsonFile(data, fileName) {
+        const jsonString = JSON.stringify(data, null, 2);
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
+
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href",     dataStr);
+        downloadAnchorNode.setAttribute("download", fileName);
+        document.body.appendChild(downloadAnchorNode);
+
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
     async function getAllMonths() {
         const allThreads = await getThreads();
         const allMonths = allThreads.map(thread => thread.month);
@@ -218,15 +231,14 @@
             allResults.push(result);
         }
 
-        if (shouldStringify) {
+        if (saveAsFile) {
             const output = { allMonths, allResults };
-            const json = JSON.stringify(output, null, 2);
-
-            console.log(json);
-        } else {
-            console.log(allMonths);
-            console.table(allResults);
+            downloadAsJsonFile(output, 'output-all-months.json');
         }
+
+        console.log(allMonths);
+        console.table(allResults);
+        
     }
 
     async function compareLastTwoMonths() {
@@ -238,21 +250,35 @@
 
         const output = { result };
 
-        if (shouldStringify) {
-            const json = JSON.stringify(output, null, 2);
-            console.log(json);
-        } else {
-            console.table(output);
+        if (saveAsFile) {
+            downloadAsJsonFile(output, 'output-last-two-months.json');
         }
+        console.table(output);
     }
 
     async function main() {
-        await compareAllMonths();
-        // await compareLastTwoMonths();
+        switch (whichMonths) {
+            case 'last-two':
+                await compareLastTwoMonths();        
+                break;
+            case 'all':
+                await compareAllMonths();        
+                break;
+        
+            default:
+                break;
+        }
     }
 
-
     await main();
+}
 
-})({ shouldStringify: true });
+(function() {
+    const options = {
+        saveAsFile: true,
+        whichMonths: 'all',
+    }
+    parse(options);
+})();
+
 
