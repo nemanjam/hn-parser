@@ -156,6 +156,8 @@ function formatResult(input) {
     const totalCount = newCompanies.length + oldCompanies.length;
     const newCount = newCompanies.length;
     const oldCount = oldCompanies.length;
+    const percentageOfNew = `${Math.round((newCount / totalCount) * 100)}%`;
+    const percentageOfOld = `${Math.round((oldCount / totalCount) * 100)}%`;
 
     const output = { 
         forMonth: month2,
@@ -163,6 +165,8 @@ function formatResult(input) {
         totalCount,
         newCount,
         oldCount,
+        percentageOfNew,
+        percentageOfOld,
         newNames: newCompanies.map(company => company.name),
         oldNames: oldCompanies.map(company => company.name),
         newCompanies,
@@ -227,8 +231,8 @@ async function compareLastTwoMonths() {
 }
 
 async function main() {
-    // await compareAllMonths();
-    await compareLastTwoMonths();
+    await compareAllMonths();
+    // await compareLastTwoMonths();
 }
 
 
