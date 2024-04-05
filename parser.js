@@ -182,7 +182,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
         return output;
     }
 
-      function downloadAsJsonFile(data, fileName) {
+    function downloadAsJsonFile(data, fileName) {
         const jsonString = JSON.stringify(data, null, 2);
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
 
