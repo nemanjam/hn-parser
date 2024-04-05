@@ -277,8 +277,8 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
 (function() {
     const options = {
-        // saveAsFile: true,
-        // whichMonths: 'all',
+        saveAsFile: true,
+        whichMonths: 'all',
     }
     parse(options);
 })();
