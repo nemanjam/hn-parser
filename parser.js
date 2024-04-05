@@ -276,6 +276,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
         saveAsFile: true,
         whichMonths: 'all',
     }
+    
     parse(options);
 })();
 
