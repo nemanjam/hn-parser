@@ -203,7 +203,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
         return result;
     }
 
-    async function compareTwoMonths(month1, month2, shouldPrint = false) {
+    async function compareTwoMonths(month1, month2) {
         const threadUrl1 = await getThreadUrlFromMonth(month1);
         const threadUrl2 = await getThreadUrlFromMonth(month2);
 
@@ -214,10 +214,6 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
         const input = { result, month1, month2 };
         const output = formatResult(input);
-
-        if (shouldPrint) {
-            console.table(output);
-        }
 
         return output;
     }
