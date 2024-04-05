@@ -79,7 +79,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
         const linkChildSelector = 'span.age a';
 
         const companyNameRegex = /^([^|]+)\|/;
-        const removeLinkRegex = /^(.*?)\s+\(.*\)$/;
+        const removeLinkOrBracesRegex = /^(.*?)\s*(?:\([^)]*\)|https?:\/\/\S+)/;
 
         const doc = await getDocumentFromUrl(threadUrl);
         const postsNodes = doc.querySelectorAll(postsSelector)
@@ -95,7 +95,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
             let name = match ? match[1].trim() : null;
             if (!name) continue;
 
-            const urlMatch = name.match(removeLinkRegex);
+            const urlMatch = name.match(removeLinkOrBracesRegex);
             name = urlMatch ? urlMatch[1].trim() : name;
 
             const linkNode = postNode.querySelector(linkChildSelector);
@@ -123,6 +123,8 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
     function compareCompanies(company1, company2) {
         const isEqual = company1.name === company2.name;
+        // console.log('isEqual: ', isEqual, `${company1.name} === ${company2.name}`);
+
         return isEqual;
     }
 
@@ -275,8 +277,8 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
 (function() {
     const options = {
-        saveAsFile: true,
-        whichMonths: 'all',
+        // saveAsFile: true,
+        // whichMonths: 'all',
     }
     parse(options);
 })();
