@@ -1,7 +1,7 @@
 
 async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
-    const cache = { threads: null, url: [] };
+    const cache = { url: [] };
 
     async function getDocumentFromUrl(url) {
         if (!cache.url?.[url]) {
@@ -43,12 +43,9 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
     }
 
     async function getThreadUrlFromMonth(month) {
+        const threads = await getThreads();
 
-        if (!cache.threads) {
-            cache.threads = await getThreads();
-        }
-
-        const thread = cache.threads.find(thread => thread.month === month);
+        const thread = threads.find(thread => thread.month === month);
         const link = thread.link;
 
         return link;
