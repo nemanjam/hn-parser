@@ -32,13 +32,22 @@ async function getThreads() {
     return threads;
 }
 
-async function getThreadUrlFromMonth(month) {
-    const threads = await getThreads();
+globalThis.cache = { threads: null };
 
-    const thread = threads.find(thread => thread.month === month);
+async function getThreadUrlFromMonth(month) {
+
+    if (!globalThis.cache.threads) {
+        globalThis.cache.threads = await getThreads();
+    }
+
+    const thread = cache.threads.find(thread => thread.month === month);
     const link = thread.link;
 
     return link;
+}
+
+async function sleep(seconds) {
+    return new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }
 
 async function getPagesUrlsForMonth(threadUrl) {
@@ -48,12 +57,15 @@ async function getPagesUrlsForMonth(threadUrl) {
 
     for (let page = 1; page < 10; page++) {
         const pageUrl = `${threadUrl}&p=${page}`;
-        
-        const doc = await getDocumentFromUrl(pageUrl);
-        const postsNodes = doc.querySelectorAll(postsSelector);
-        if (!(postsNodes.length > 0)) break;
-        
-        pagesUrls.push(pageUrl);
+        try {
+            const doc = await getDocumentFromUrl(pageUrl); 
+            await sleep(1);
+
+            const postsNodes = doc.querySelectorAll(postsSelector);
+            if (!(postsNodes.length > 0)) break;
+            
+            pagesUrls.push(pageUrl);
+        } catch (error) {}
     }
 
     return pagesUrls;
@@ -137,22 +149,38 @@ function getNewAndOldCompanies(companies1, companies2) {
     return result;
 }
 
-function printResult(result) {
+function formatResult(input) {
+    const { result, month1, month2 } = input;
     const { newCompanies, oldCompanies } = result;
 
+    const totalCount = newCompanies.length + oldCompanies.length;
+    const newCount = newCompanies.length;
+    const oldCount = oldCompanies.length;
+
     const output = { 
-        newCompanies,
-        newCount: newCompanies.length,
+        forMonth: month2,
+        comparedToMonth: month1,
+        totalCount,
+        newCount,
+        oldCount,
         newNames: newCompanies.map(company => company.name),
-        oldCompanies,
-        oldCount: oldCompanies.length,
         oldNames: oldCompanies.map(company => company.name),
+        newCompanies,
+        oldCompanies,
     };
 
     return output;
 }
 
-async function main(month1, month2) {
+async function getAllMonths() {
+    const allThreads = await getThreads();
+    const allMonths = allThreads.map(thread => thread.month);
+    const monthPairs = allMonths.slice(0, -1).map((value, index) => ({month2: value, month1: allMonths[index + 1]}));
+    const result = { allMonths, monthPairs };
+    return result;
+}
+
+async function compareTwoMonths(month1, month2, shouldPrint = false) {
     const threadUrl1 = await getThreadUrlFromMonth(month1);
     const threadUrl2 = await getThreadUrlFromMonth(month2);
 
@@ -160,11 +188,50 @@ async function main(month1, month2) {
     const companies2 = await getCompaniesForMonth(threadUrl2);
 
     const result = getNewAndOldCompanies(companies1, companies2);
-    const output = printResult(result);
+
+    const input = { result, month1, month2 };
+    const output = formatResult(input);
+
+    if (shouldPrint) {
+        console.table(output);
+    }
 
     return output;
 }
 
-await main('December', 'January');
+async function compareAllMonths() {
+    const parsedMonths = await getAllMonths();
+    const { allMonths, monthPairs } = parsedMonths;
+
+    const allResults = [];
+
+    for (const monthPair of monthPairs) {
+        const result = await compareTwoMonths(monthPair.month1, monthPair.month2);
+        allResults.push(result);
+    }
+
+    console.log(allMonths);
+    console.table(allResults);
+}
+
+async function compareLastTwoMonths() {
+    const parsedMonths = await getAllMonths();
+    const { monthPairs } = parsedMonths;
+
+    const monthPair = monthPairs[0];
+    const result = await compareTwoMonths(monthPair.month1, monthPair.month2);
+
+    const output = { result };
+
+    console.table(output);
+}
+
+async function main() {
+    // await compareAllMonths();
+    await compareLastTwoMonths();
+}
+
+
+await main();
 
 
