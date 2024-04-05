@@ -3,9 +3,10 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
     const cache = { threads: null };
 
-
     async function getDocumentFromUrl(url) {
-        const htmlContent = await (await fetch(url)).text();
+        const response = await fetch(url);
+        const htmlContent = await response.text();
+
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
         return doc;
@@ -129,7 +130,6 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
     }
 
     function getNewAndOldCompanies(companies1, companies2) {
-
         const newCompanies = [];
         const oldCompanies = [];
 
