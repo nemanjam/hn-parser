@@ -163,10 +163,6 @@
         const newNames = newCompanies.map(company => company.name);
         const oldNames = oldCompanies.map(company => company.name);
 
-        function stringify(value) {
-            return shouldStringify ? JSON.stringify(value) : value;
-        }
-
         const output = { 
             forMonth: month2,
             comparedToMonth: month1,
@@ -175,10 +171,10 @@
             oldCount,
             percentageOfNew,
             percentageOfOld,
-            newNames: stringify(newNames),
-            oldNames: stringify(oldNames),
-            newCompanies: stringify(newCompanies),
-            oldCompanies: stringify(oldCompanies),
+            newNames,
+            oldNames,
+            newCompanies,
+            oldCompanies,
         };
 
         return output;
@@ -222,8 +218,15 @@
             allResults.push(result);
         }
 
-        console.log(allMonths);
-        console.table(allResults);
+        if (shouldStringify) {
+            const output = { allMonths, allResults };
+            const json = JSON.stringify(output, null, 2);
+
+            console.log(json);
+        } else {
+            console.log(allMonths);
+            console.table(allResults);
+        }
     }
 
     async function compareLastTwoMonths() {
@@ -235,7 +238,12 @@
 
         const output = { result };
 
-        console.table(output);
+        if (shouldStringify) {
+            const json = JSON.stringify(output, null, 2);
+            console.log(json);
+        } else {
+            console.table(output);
+        }
     }
 
     async function main() {
