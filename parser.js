@@ -1,5 +1,5 @@
 
-async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
+async function parse({ saveAsFile = true, whichMonths = 'last-two' }) {
 
     const cache = { url: [] };
 
@@ -7,7 +7,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
         if (!cache.url?.[url]) {
             const response = await fetch(url);
             cache.url[url] = await response.text();
-            await sleep(1);
+            await sleep(5);
         }
 
         const htmlContent = cache.url[url];
@@ -231,7 +231,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
         if (saveAsFile) {
             const output = { allMonths, allResults };
-            downloadAsJsonFile(output, 'output-all-months.json');
+            downloadAsJsonFile(output, fileNames.outputAllMonths);
         }
 
         console.log(allMonths);
@@ -248,7 +248,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
         const output = { result };
 
         if (saveAsFile) {
-            downloadAsJsonFile(output, 'output-last-two-months.json');
+            downloadAsJsonFile(output, fileNames.outputLastTwoMoths);
         }
         console.table(output);
     }
@@ -293,7 +293,7 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
 
         if (saveAsFile) {
             const output = { allCompanies };
-            downloadAsJsonFile(output, 'output-all-companies.json');
+            downloadAsJsonFile(output, fileNames.outputAllCompanies);
         }
 
         console.table(allCompanies);
@@ -316,13 +316,19 @@ async function parse({ saveAsFile = false, whichMonths = 'last-two' }) {
         }
     }
 
+    const fileNames = {
+        outputAllMonths: 'output-all-months.json',
+        outputLastTwoMoths: 'output-last-two-months.json',
+        outputAllCompanies: 'output-all-companies.json',
+    };
+
     await main();
 }
 
 (function() {
     const options = {
         saveAsFile: true,
-        whichMonths: 'companies',
+        whichMonths: 'last-two',
     }
 
     parse(options);
