@@ -1,7 +1,7 @@
 
 async function parse({ saveAsFile = true, whichMonths = 'last-two' }) {
 
-    const cache = { url: [] };
+    const cache = { url: {} };
 
     async function getDocumentFromUrl(url) {
         if (!cache.url?.[url]) {
